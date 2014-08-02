@@ -51,8 +51,16 @@ public class MainActivity extends Activity
     public void onNavigationDrawerItemSelected(int position) {
         // update the main content by replacing fragments
         FragmentManager fragmentManager = getFragmentManager();
+        Fragment fragment = null;
+        if (position == 0) {
+            fragment = CameraFragment.newInstance();
+        }
+        else {
+            fragment = PlaceholderFragment.newInstance(position + 1);
+        }
+
         fragmentManager.beginTransaction()
-                .replace(R.id.container, PlaceholderFragment.newInstance(position + 1))
+                .replace(R.id.container, fragment)
                 .commit();
     }
 
