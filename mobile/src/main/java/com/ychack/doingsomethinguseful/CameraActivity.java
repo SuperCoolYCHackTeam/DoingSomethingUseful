@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.IntentSender;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -17,6 +18,9 @@ import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -36,10 +40,13 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
+
+
 public class CameraActivity extends Activity implements  DataApi.DataListener,
         MessageApi.MessageListener, NodeApi.NodeListener, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
     private static final String TAG = "CameraActivity";
+    public static String capturedImagePath;
 
     private static final String START_ACTIVITY_PATH = "/start-camera-activity";
 
@@ -179,9 +186,25 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
 
     Camera.PictureCallback jpegCallback = new Camera.PictureCallback() {
         public void onPictureTaken(byte[] data, Camera camera) {
-            String timestamp = "" + System.currentTimeMillis() / 1000L;
-            Bitmap bm = BitmapFactory.decodeByteArray(data , 0, data.length);
-            MediaStore.Images.Media.insertImage(getContentResolver(), bm, timestamp, "");
+            String timestamp = "" + System.currentTimeMillis() / 1000L +".jpg";
+            Bitmap bitmapPicture = BitmapFactory.decodeByteArray(data , 0, data.length);
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            bitmapPicture.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+
+            File imageDirectory = new File(Environment.getExternalStorageDirectory() + "/DCIM/Camera/");
+
+            imageDirectory.mkdirs();
+
+            File f = new File(Environment.getExternalStorageDirectory() +"/DCIM/Camera/"+ timestamp);
+            try {
+                f.createNewFile();
+                FileOutputStream fo = new FileOutputStream(f);
+                fo.write(data);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            capturedImagePath = Environment.getExternalStorageDirectory() +"/DCIM/Camera/"+ timestamp;
             camera.startPreview();
             safeToTakePicture = true;
             System.out.println("Ok, the coast is clear");

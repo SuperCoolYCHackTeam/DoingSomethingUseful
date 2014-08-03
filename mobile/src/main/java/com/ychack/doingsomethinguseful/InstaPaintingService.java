@@ -75,8 +75,8 @@ public class InstaPaintingService {
         }
         String imageLength = exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
         String imageWidth = exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH);
-        builder.addTextBody("height", String.valueOf(Integer.parseInt(imageLength)/10));
-        builder.addTextBody("width", String.valueOf(Integer.parseInt(imageWidth)/10));
+        builder.addTextBody("height", String.valueOf(Integer.parseInt(imageLength)/100));
+        builder.addTextBody("width", String.valueOf(Integer.parseInt(imageWidth)/100));
         builder.addTextBody("coords", "0,0,"+imageWidth+","+imageLength);
         httpPost.setEntity(builder.build());
 
