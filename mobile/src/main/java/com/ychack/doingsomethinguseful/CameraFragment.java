@@ -44,6 +44,13 @@ public class CameraFragment extends Fragment {
                 startActivity(new Intent(CameraFragment.this.getActivity(), CameraActivity.class));
             }
         });
+
+        Button button2 = (Button) v.findViewById(R.id.webButton);
+        button2.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v) {
+                startActivity(new Intent (CameraFragment.this.getActivity(), WebFeedActivity.class));
+            }
+        });
         return v;
     }
 
