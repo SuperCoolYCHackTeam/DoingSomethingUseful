@@ -66,6 +66,15 @@ public class CameraActivity extends Activity {
         });
     }
 
+    public void finishThisThing() {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                CameraActivity.this.finish();
+            }
+        });
+    }
+
     private class TakePictureTask extends AsyncTask<Void, Void, Void> {
 
         @Override

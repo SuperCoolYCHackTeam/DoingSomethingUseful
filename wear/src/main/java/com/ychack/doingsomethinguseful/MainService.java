@@ -17,6 +17,7 @@ public class MainService extends WearableListenerService {
     private final String TAG = "MainService";
 
     private static final String START_CAMERA_ACTIVITY_PATH = "/start-camera-activity";
+    private static final String START_IMAGE_ACTIVITY_PATH = "/start-image-activity";
     private static final String NEW_IMAGE = "/new-camera-image";
 
 
@@ -49,6 +50,14 @@ public class MainService extends WearableListenerService {
             if (CameraActivity.instance != null) {
                 CameraActivity.instance.updateImage(messageEvent.getData());
             }
+        } else if (messageEvent.getPath().equals(START_IMAGE_ACTIVITY_PATH)) {
+            if (CameraActivity.instance != null) {
+                CameraActivity.instance.finishThisThing();
+            }
+            Intent startIntent = new Intent(this, ImageActivity.class);
+            startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startIntent.putExtra("image", messageEvent.getData());
+            startActivity(startIntent);
         }
     }
 

@@ -42,6 +42,7 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
     private static final String TAG = "CameraActivity";
 
     private static final String START_ACTIVITY_PATH = "/start-camera-activity";
+    private static final String START_IMAGE_ACTIVITY_PATH = "/start-image-activity";
 
     private static final String NEW_IMAGE = "/new-camera-image";
 
@@ -132,12 +133,16 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
         super.onStop();
     }
 
+    Boolean safeToSend = false;
+
     Runnable mStatusChecker = new Runnable() {
         @Override
         public void run() {
-            if (preview.mData != null) {
-                byte[] resizedData = resizeImage(preview.mData);
-                new SendImageTask().execute(resizedData);
+            if (CameraActivity.this.safeToSend) {
+                if (preview.mData != null) {
+                    byte[] resizedData = resizeImage(preview.mData);
+                    new SendImageTask().execute(resizedData);
+                }
             }
             handler.postDelayed(mStatusChecker, 10);
         }
@@ -151,6 +156,7 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
         if (messageEvent.getPath().equals("TAKE_PICTURE")) {
+            safeToSend = false;
             if (camera == null) {
                 System.out.println("Camera is null nothing to do here. Abort mission.");
             } else {
@@ -158,9 +164,8 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        camera.stopPreview();
+                        preview.setCamera(null);
                         camera.takePicture(null, null, jpegCallback);
-
                     }
                 });
             }
@@ -174,8 +179,7 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
             Bitmap bm = BitmapFactory.decodeByteArray(data , 0, data.length);
             MediaStore.Images.Media.insertImage(getContentResolver(), bm, timestamp, "");
             camera.unlock();
-            camera.startPreview();
-            preview.setCamera(camera);
+            new SendImagePreviewTask().execute(data);
             return;
         }
    };
@@ -226,6 +230,38 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
                 sendStartActivityMessage(node);
             }
             return null;
+        }
+    }
+
+    private void sendImageForPreview(String node, byte[] image) {
+        Wearable.MessageApi.sendMessage(
+                mGoogleApiClient, node, START_IMAGE_ACTIVITY_PATH, image).setResultCallback(
+                new ResultCallback<MessageApi.SendMessageResult>() {
+                    @Override
+                    public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                        if (!sendMessageResult.getStatus().isSuccess()) {
+                            Log.e(TAG, "Failed to send message with status code: "
+                                    + sendMessageResult.getStatus().getStatusCode());
+                        }
+                    }
+                }
+        );
+    }
+
+    private class SendImagePreviewTask extends AsyncTask<byte[], Void, Void> {
+
+        @Override
+        protected Void doInBackground(byte[]... args) {
+            Collection<String> nodes = getNodes();
+
+            for (String node : nodes) {
+                sendImageForPreview(node, args[0]);
+            }
+            return null;
+        }
+
+        @Override protected void onPostExecute(Void result) {
+            CameraActivity.this.finish();
         }
     }
 
@@ -281,6 +317,7 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
         Wearable.MessageApi.addListener(mGoogleApiClient, this);
         Wearable.NodeApi.addListener(mGoogleApiClient, this);
         handler.postDelayed(mStatusChecker, 50);
+        safeToSend = true;
     }
 
     @Override //ConnectionCallbacks
@@ -313,5 +350,6 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
             Wearable.MessageApi.removeListener(mGoogleApiClient, this);
             Wearable.NodeApi.removeListener(mGoogleApiClient, this);
         }
+        safeToSend = false;
     }
 }
