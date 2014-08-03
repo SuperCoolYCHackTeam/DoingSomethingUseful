@@ -5,20 +5,13 @@ import android.content.Context;
 import android.content.IntentSender;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.hardware.Camera;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.view.SurfaceView;
-import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -38,7 +31,6 @@ import java.net.HttpURLConnection;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashSet;
-
 /**
  * Created by ristovuorio on 8/2/14.
  */
@@ -60,6 +52,8 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
     ImageView mImageView;
     Bitmap mBitmap;
     GoogleApiClient mGoogleApiClient;
+    Handler mTimer;
+    Boolean active;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -70,22 +64,9 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         handler = new Handler();
         setContentView(R.layout.activity_webfeed);
-        final ImageView imageView = (ImageView)findViewById(R.id.imageView);
+        mImageView = (ImageView)findViewById(R.id.imageView);
 
-        imageView.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View arg0) {
-                new LoadImageTask().execute("http://ychacks-image-service.herokuapp.com/image");
-                new StartWearableActivityTask().execute();
-
-                if (mBitmap == null) {
-                    return;
-                }
-                imageView.setImageBitmap(mBitmap);
-                new SendImageTask().execute(resizeBitmap(mBitmap));
-            }
-        });
+        scheduleUpdate();
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
@@ -94,12 +75,18 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
                 .build();
     }
 
+    private void scheduleUpdate() {
+        System.out.println("Scheduling timer");
+        handler.postDelayed(imageUpdate, 1000);
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
         if (!mResolvingError) {
             mGoogleApiClient.connect();
         }
+        active = true;
     }
 
     @Override
@@ -114,13 +101,8 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
 
     @Override
     protected void onStop() {
-        if (!mResolvingError) {
-            Wearable.DataApi.removeListener(mGoogleApiClient, this);
-            Wearable.MessageApi.removeListener(mGoogleApiClient, this);
-            Wearable.NodeApi.removeListener(mGoogleApiClient, this);
-            mGoogleApiClient.disconnect();
-        }
         super.onStop();
+        active = false;
     }
 
 
@@ -131,19 +113,8 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
         }
     };
 
-
-    byte[] resizeImage(byte[] input) {
-        Bitmap original = BitmapFactory.decodeByteArray(input , 0, input.length);
-        Bitmap resized = Bitmap.createScaledBitmap(original, 50, 50, true);
-
-        ByteArrayOutputStream blob = new ByteArrayOutputStream();
-        resized.compress(Bitmap.CompressFormat.JPEG, 100, blob);
-
-        return blob.toByteArray();
-    }
-
     byte[] resizeBitmap(Bitmap input) {
-        Bitmap resized = Bitmap.createScaledBitmap(input, 50, 50, true);
+        Bitmap resized = Bitmap.createScaledBitmap(input, 100, 100, true);
 
         ByteArrayOutputStream blob = new ByteArrayOutputStream();
         resized.compress(Bitmap.CompressFormat.JPEG, 100, blob);
@@ -239,6 +210,27 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
         }
 
     }
+
+    Runnable imageUpdate = new Runnable() {
+
+        @Override
+        public void run() {
+            if (active) {
+                handler.postDelayed(imageUpdate, 1000);
+            }
+
+            System.out.println("Timer Fired!");
+            new LoadImageTask().execute("http://ychacks-image-service.herokuapp.com/image");
+            new StartWearableActivityTask().execute();
+
+            if (mBitmap == null) {
+                return;
+            }
+
+            mImageView.setImageBitmap(mBitmap);
+            new SendImageTask().execute(resizeBitmap(mBitmap));
+        }
+    };
 
     private class SendImageTask extends AsyncTask<byte[], Void, Void> {
 
