@@ -45,6 +45,8 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
 
     private static final String NEW_IMAGE = "/new-camera-image";
 
+    private boolean safeToTakePicture = false;
+
     Preview preview;
     Camera camera;
     Activity act;
@@ -109,6 +111,7 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
         parameters.setJpegQuality(30);
         camera.setParameters(parameters);
         camera.startPreview();
+        safeToTakePicture = true;
         preview.setCamera(camera);
     }
 
@@ -151,15 +154,21 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
         if (messageEvent.getPath().equals("TAKE_PICTURE")) {
-            if (camera == null) {
-                System.out.println("Camera is null nothing to do here. Abort mission.");
-            } else {
-                System.out.println("asoidjfoisadjfoaisdjfoijsdafoijsdafoijasd");
+            if (camera != null) {
+                if (!safeToTakePicture) {
+                    return;
+                }
+//                camera.stopPreview();
+                safeToTakePicture = false;
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        camera.stopPreview();
-                        camera.takePicture(null, null, jpegCallback);
+                        try {
+                            camera.takePicture(null, null, jpegCallback);
+                        } catch (java.lang.RuntimeException e) {
+                            System.out.println("Could not take image");
+                            safeToTakePicture = true;
+                        }
 
                     }
                 });
@@ -173,9 +182,9 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
             String timestamp = "" + System.currentTimeMillis() / 1000L;
             Bitmap bm = BitmapFactory.decodeByteArray(data , 0, data.length);
             MediaStore.Images.Media.insertImage(getContentResolver(), bm, timestamp, "");
-            camera.unlock();
             camera.startPreview();
-            preview.setCamera(camera);
+            safeToTakePicture = true;
+            System.out.println("Ok, the coast is clear");
             return;
         }
    };
