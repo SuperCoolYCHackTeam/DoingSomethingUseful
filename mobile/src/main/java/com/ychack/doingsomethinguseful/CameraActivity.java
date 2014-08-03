@@ -2,10 +2,9 @@ package com.ychack.doingsomethinguseful;
 
 import android.app.Activity;
 import android.content.IntentSender;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
-import android.view.Menu;
-import android.view.MenuItem;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -17,37 +16,23 @@ import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
-import com.ychack.doingsomethinguseful.R;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.util.Collection;
 import java.util.HashSet;
 
-import android.app.Activity;
+import android.graphics.BitmapFactory;
 import android.content.Context;
-import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
-import android.hardware.Camera.ShutterCallback;
-import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnLongClickListener;
 import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 public class CameraActivity extends Activity implements  DataApi.DataListener,
         MessageApi.MessageListener, NodeApi.NodeListener, GoogleApiClient.ConnectionCallbacks,
@@ -59,7 +44,6 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
     private static final String NEW_IMAGE = "/new-camera-image";
 
     Preview preview;
-    Button buttonClick;
     Camera camera;
     Activity act;
     Context ctx;
@@ -96,31 +80,6 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
-
-        //Toast.makeText(ctx, getString(R.string.take_photo_help), Toast.LENGTH_LONG).show();
-
-//		buttonClick = (Button) findViewById(R.id.btnCapture);
-//
-//		buttonClick.setOnClickListener(new OnClickListener() {
-//			public void onClick(View v) {
-////				preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
-//				camera.takePicture(shutterCallback, rawCallback, jpegCallback);
-//			}
-//		});
-//
-//		buttonClick.setOnLongClickListener(new OnLongClickListener(){
-//			@Override
-//			public boolean onLongClick(View arg0) {
-//				camera.autoFocus(new AutoFocusCallback(){
-//					@Override
-//					public void onAutoFocus(boolean arg0, Camera arg1) {
-//						//camera.takePicture(shutterCallback, rawCallback, jpegCallback);
-//					}
-//				});
-//				return true;
-//			}
-//		});
-
     }
 
     @Override
@@ -137,8 +96,8 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
 //		preview.camera = Camera.open();
         camera = Camera.open();
         Camera.Parameters parameters = camera.getParameters();
-        //parameters.setPictureSize(144, 176);
-        parameters.setJpegQuality(20);
+//        parameters.setPictureSize(144, 176);
+        parameters.setJpegQuality(5);
         camera.setParameters(parameters);
         camera.startPreview();
         preview.setCamera(camera);
@@ -171,50 +130,26 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
         preview.setCamera(camera);
     }
 
-    private void refreshGallery(File file) {
-        Intent mediaScanIntent = new Intent( Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        mediaScanIntent.setData(Uri.fromFile(file));
-        sendBroadcast(mediaScanIntent);
-    }
-
     Runnable mStatusChecker = new Runnable() {
         @Override
         public void run() {
+
             if (camera != null) {
                 camera.takePicture(null, null, jpegCallback);
             }
             else {
-                handler.postDelayed(mStatusChecker, 1000);
+                handler.postDelayed(mStatusChecker, 50);
             }
-        }
-    };
-
-    void startRepeatingTask() {
-        mStatusChecker.run();
-    }
-
-    void stopRepeatingTask() {
-        handler.removeCallbacks(mStatusChecker);
-    }
-
-    ShutterCallback shutterCallback = new ShutterCallback() {
-        public void onShutter() {
-//			 Log.d(TAG, "onShutter'd");
-        }
-    };
-
-    PictureCallback rawCallback = new PictureCallback() {
-        public void onPictureTaken(byte[] data, Camera camera) {
-//			 Log.d(TAG, "onPictureTaken - raw");
         }
     };
 
     PictureCallback jpegCallback = new PictureCallback() {
         public void onPictureTaken(byte[] data, Camera camera) {
-            new SendImageTask().execute(data);
+            byte[] resizedData = resizeImage(data);
+            new SendImageTask().execute(resizedData);
             resetCam();
-            Log.d(TAG, "onPictureTaken - jpeg");
-            handler.postDelayed(mStatusChecker, 1000);
+            Log.d(TAG, "onPictureTaken - jpeg "+resizedData.length);
+            handler.postDelayed(mStatusChecker, 50);
         }
     };
 
@@ -228,6 +163,16 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
 
     }
 
+    byte[] resizeImage(byte[] input) {
+        Bitmap original = BitmapFactory.decodeByteArray(input , 0, input.length);
+        Bitmap resized = Bitmap.createScaledBitmap(original, 50, 50, true);
+
+        ByteArrayOutputStream blob = new ByteArrayOutputStream();
+        resized.compress(Bitmap.CompressFormat.JPEG, 100, blob);
+
+        return blob.toByteArray();
+    }
+
     @Override
     public void onPeerConnected(Node node) {
         Log.d(TAG,"node connected " + node.getDisplayName());
@@ -237,42 +182,6 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
     public void onPeerDisconnected(Node node) {
         Log.d(TAG,"node disconnected " + node.getDisplayName());
     }
-
-    private class SaveImageTask extends AsyncTask<byte[], Void, Void> {
-
-        @Override
-        protected Void doInBackground(byte[]... data) {
-            FileOutputStream outStream = null;
-
-            // Write to SD Card
-            try {
-                File sdCard = Environment.getExternalStorageDirectory();
-                File dir = new File (sdCard.getAbsolutePath() + "/camtest");
-                dir.mkdirs();
-
-                String fileName = String.format("%d.jpg", System.currentTimeMillis());
-                File outFile = new File(dir, fileName);
-
-                outStream = new FileOutputStream(outFile);
-                outStream.write(data[0]);
-                outStream.flush();
-                outStream.close();
-
-                Log.d(TAG, "onPictureTaken - wrote bytes: " + data.length + " to " + outFile.getAbsolutePath());
-
-                refreshGallery(outFile);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-            }
-            return null;
-        }
-
-    }
-
-
 
     private void sendStartActivityMessage(String node) {
         Wearable.MessageApi.sendMessage(

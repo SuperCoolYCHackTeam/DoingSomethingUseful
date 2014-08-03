@@ -42,11 +42,14 @@ public class CameraActivity extends Activity {
         handler.post(new Runnable() {
             @Override
             public void run() {
+                System.out.println("Message received! "+data.length);
                 if (mImageView != null) {
+                    System.out.println("Message received! "+data.length);
                     BitmapFactory.Options op = new BitmapFactory.Options();
                     op.inPreferredConfig = Bitmap.Config.RGB_565;
                     Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
                     mImageView.setImageBitmap(bm);
+                    System.gc();
                 }
             }
         });
