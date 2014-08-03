@@ -25,6 +25,7 @@ import android.graphics.BitmapFactory;
 import android.content.Context;
 import android.hardware.Camera;
 import android.os.AsyncTask;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
@@ -149,8 +150,36 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
+        if (messageEvent.getPath().equals("TAKE_PICTURE")) {
+            if (camera == null) {
+                System.out.println("Camera is null nothing to do here. Abort mission.");
+            } else {
+                System.out.println("asoidjfoisadjfoaisdjfoijsdafoijsdafoijasd");
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        camera.stopPreview();
+                        camera.takePicture(null, null, jpegCallback);
 
+                    }
+                });
+            }
+
+        }
     }
+
+    Camera.PictureCallback jpegCallback = new Camera.PictureCallback() {
+        public void onPictureTaken(byte[] data, Camera camera) {
+            String timestamp = "" + System.currentTimeMillis() / 1000L;
+            Bitmap bm = BitmapFactory.decodeByteArray(data , 0, data.length);
+            MediaStore.Images.Media.insertImage(getContentResolver(), bm, timestamp, "");
+            camera.unlock();
+            camera.startPreview();
+            preview.setCamera(camera);
+            return;
+        }
+   };
+
 
     byte[] resizeImage(byte[] input) {
         Bitmap original = BitmapFactory.decodeByteArray(input , 0, input.length);

@@ -1,15 +1,17 @@
 package com.ychack.doingsomethinguseful;
 
-import android.app.Service;
 import android.content.Intent;
-import android.os.IBinder;
 import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
+
+import java.util.Collection;
+import java.util.HashSet;
 
 public class MainService extends WearableListenerService {
     private final String TAG = "MainService";
@@ -21,7 +23,7 @@ public class MainService extends WearableListenerService {
     public MainService() {
     }
 
-    private GoogleApiClient mGoogleApiClient = null;
+    public static GoogleApiClient mGoogleApiClient = null;
     @Override
     public void onCreate() {
         super.onCreate();
