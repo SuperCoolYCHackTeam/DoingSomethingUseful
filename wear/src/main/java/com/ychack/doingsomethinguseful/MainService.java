@@ -41,6 +41,9 @@ public class MainService extends WearableListenerService {
             startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(startIntent);
         } else if (messageEvent.getPath().equals(NEW_IMAGE)) {
+            Intent startIntent = new Intent(this, CameraActivity.class);
+            startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(startIntent);
             if (CameraActivity.instance != null) {
                 CameraActivity.instance.updateImage(messageEvent.getData());
             }
