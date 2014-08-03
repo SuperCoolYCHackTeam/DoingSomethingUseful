@@ -47,8 +47,6 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
     Activity act;
     Context ctx;
 
-    private Handler handler = null;
-
     ImageView mImageView;
     Bitmap mBitmap;
     GoogleApiClient mGoogleApiClient;
@@ -62,7 +60,7 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
         act = this;
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        handler = new Handler();
+        mTimer = new Handler();
         setContentView(R.layout.activity_webfeed);
         mImageView = (ImageView)findViewById(R.id.imageView);
 
@@ -77,7 +75,7 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
 
     private void scheduleUpdate() {
         System.out.println("Scheduling timer");
-        handler.postDelayed(imageUpdate, 1000);
+        mTimer.postDelayed(imageUpdate, 1000);
     }
 
     @Override
@@ -109,7 +107,7 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
     Runnable mStatusChecker = new Runnable() {
         @Override
         public void run() {
-            handler.postDelayed(mStatusChecker, 50);
+            mTimer.postDelayed(mStatusChecker, 50);
         }
     };
 
@@ -157,7 +155,7 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
         Wearable.DataApi.addListener(mGoogleApiClient, this);
         Wearable.MessageApi.addListener(mGoogleApiClient, this);
         Wearable.NodeApi.addListener(mGoogleApiClient, this);
-        handler.postDelayed(mStatusChecker, 1000);
+        mTimer.postDelayed(mStatusChecker, 1000);
     }
 
     @Override //ConnectionCallbacks
@@ -216,7 +214,7 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
         @Override
         public void run() {
             if (active) {
-                handler.postDelayed(imageUpdate, 1000);
+                mTimer.postDelayed(imageUpdate, 1000);
             }
 
             System.out.println("Timer Fired!");
