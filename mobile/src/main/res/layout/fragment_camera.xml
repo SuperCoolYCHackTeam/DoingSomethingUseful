@@ -21,4 +21,12 @@
         android:layout_gravity="center_horizontal|top"
         android:layout_marginTop="100dp" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Instapaint It"
+        android:id="@+id/instapaintButton"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginTop="100dp" />
+
 </FrameLayout>
