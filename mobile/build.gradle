@@ -17,6 +17,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+    }
 }
 
 dependencies {
@@ -26,4 +31,10 @@ dependencies {
     compile 'com.google.android.gms:play-services-wearable:+'
     // You must install or update the Support Repository through the SDK manager to use this dependency.
     compile 'com.android.support:support-v4:20.+'
+    compile('org.apache.httpcomponents:httpmime:4.+') {
+        exclude module: "httpclient"
+    }
+    compile('org.apache.httpcomponents:httpcore:4.+') {
+        exclude module: "httpclient"
+    }
 }
