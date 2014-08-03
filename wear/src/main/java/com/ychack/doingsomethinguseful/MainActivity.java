@@ -2,12 +2,16 @@ package com.ychack.doingsomethinguseful;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.v7.widget.RecyclerView;
 import android.support.wearable.view.WatchViewStub;
-import android.widget.TextView;
+import android.view.ViewGroup;
+import com.ychack.doingsomethinguseful.MainListAdapter;
+
+import com.ychack.doingsomethinguseful.MainListView;
 
 public class MainActivity extends Activity {
 
-    private TextView mTextView;
+    private MainListView mMainListView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,7 +21,8 @@ public class MainActivity extends Activity {
         stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
             @Override
             public void onLayoutInflated(WatchViewStub stub) {
-                mTextView = (TextView) stub.findViewById(R.id.text);
+                mMainListView = (MainListView) stub.findViewById(R.id.main_list_view);
+                mMainListView.setAdapter(new MainListAdapter());
             }
         });
     }

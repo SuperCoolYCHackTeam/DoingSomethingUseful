@@ -7,9 +7,8 @@
     tools:context=".MainActivity"
     tools:deviceIds="wear_square">
 
-    <TextView
-        android:id="@+id/text"
+    <com.ychack.doingsomethinguseful.MainListView
+        android:id="@+id/main_list_view"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/hello_square" />
+        android:layout_height="wrap_content" />
 </LinearLayout>
