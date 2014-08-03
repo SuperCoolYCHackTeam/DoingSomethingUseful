@@ -3,20 +3,26 @@ package com.ychack.doingsomethinguseful;
  * @author Jose Davis Nidhin
  */
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
 import android.content.Context;
+import android.content.res.Configuration;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
+import android.os.Build;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 
-class Preview extends ViewGroup implements SurfaceHolder.Callback {
+class Preview extends ViewGroup implements SurfaceHolder.Callback, Camera.PreviewCallback {
     private final String TAG = "Preview";
+    public volatile byte[] mData;
 
     SurfaceView mSurfaceView;
     SurfaceHolder mHolder;
@@ -47,6 +53,9 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
                 // set Camera parameters
                 mCamera.setParameters(params);
             }
+        }
+        else {
+            mData = null;
         }
     }
 
@@ -103,7 +112,28 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
             requestLayout();
             mCamera.setParameters(parameters);
             mCamera.startPreview();
+            try {
+                mCamera.setPreviewDisplay(holder);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mCamera.setPreviewCallback(this);
+            mCamera.startPreview();
         }
     }
 
+    @Override
+    public void onPreviewFrame(byte[] data, Camera camera) {
+        Camera.Parameters parameters = camera.getParameters();
+        int width = parameters.getPreviewSize().width;
+        int height = parameters.getPreviewSize().height;
+
+        YuvImage yuv = new YuvImage(data, parameters.getPreviewFormat(), width, height, null);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        yuv.compressToJpeg(new Rect(0, 0, width, height), 50, out);
+
+        byte[] bytes = out.toByteArray();
+        mData = bytes;
+    }
 }
