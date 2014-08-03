@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.wearable.view.WatchViewStub;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 public class CameraActivity extends Activity {
 
@@ -42,11 +41,10 @@ public class CameraActivity extends Activity {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                System.out.println("Message received! "+data.length);
                 if (mImageView != null) {
                     System.out.println("Message received! "+data.length);
                     BitmapFactory.Options op = new BitmapFactory.Options();
-                    op.inPreferredConfig = Bitmap.Config.RGB_565;
+                    op.inPreferredConfig = Bitmap.Config.ARGB_8888;
                     Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
                     mImageView.setImageBitmap(bm);
                     System.gc();
