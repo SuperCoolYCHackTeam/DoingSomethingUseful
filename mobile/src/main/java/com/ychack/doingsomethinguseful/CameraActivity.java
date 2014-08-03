@@ -30,6 +30,7 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
@@ -64,6 +65,17 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
         setContentView(R.layout.activity_camera);
 
         surface = (SurfaceView)findViewById(R.id.cameraSurfaceView);
+        initializePreview();
+
+
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(Wearable.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+    }
+
+    private void initializePreview() {
         preview = new Preview(this, surface);
         preview.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         ((RelativeLayout) findViewById(R.id.camera_layout)).addView(preview);
@@ -76,13 +88,6 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
                 new StartWearableActivityTask().execute();
             }
         });
-
-
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addApi(Wearable.API)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .build();
     }
 
     @Override
@@ -101,7 +106,7 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
         List<Camera.Size> sizes = parameters.getSupportedPreviewSizes();
         Camera.Size cs = sizes.get(0);
         parameters.setPreviewSize(cs.width, cs.height);
-        parameters.setJpegQuality(50);
+        parameters.setJpegQuality(30);
         camera.setParameters(parameters);
         camera.startPreview();
         preview.setCamera(camera);
@@ -123,10 +128,6 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
     @Override
     protected void onStop() {
         if (!mResolvingError) {
-            Wearable.DataApi.removeListener(mGoogleApiClient, this);
-            Wearable.MessageApi.removeListener(mGoogleApiClient, this);
-            Wearable.NodeApi.removeListener(mGoogleApiClient, this);
-            mGoogleApiClient.disconnect();
         }
         super.onStop();
     }
@@ -138,7 +139,7 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
                 byte[] resizedData = resizeImage(preview.mData);
                 new SendImageTask().execute(resizedData);
             }
-            handler.postDelayed(mStatusChecker, 50);
+            handler.postDelayed(mStatusChecker, 10);
         }
     };
 
@@ -154,10 +155,10 @@ public class CameraActivity extends Activity implements  DataApi.DataListener,
 
     byte[] resizeImage(byte[] input) {
         Bitmap original = BitmapFactory.decodeByteArray(input , 0, input.length);
-        Bitmap resized = Bitmap.createScaledBitmap(original, 150, 150, true);
+        Bitmap resized = Bitmap.createScaledBitmap(original, 200, 200, true);
 
         ByteArrayOutputStream blob = new ByteArrayOutputStream();
-        resized.compress(Bitmap.CompressFormat.JPEG, 50, blob);
+        resized.compress(Bitmap.CompressFormat.JPEG, 30, blob);
 
         return blob.toByteArray();
     }

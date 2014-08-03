@@ -54,6 +54,9 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback, Camera.Previe
                 mCamera.setParameters(params);
             }
         }
+        else {
+            mData = null;
+        }
     }
 
 
@@ -96,7 +99,6 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback, Camera.Previe
     public void surfaceDestroyed(SurfaceHolder holder) {
         // Surface will be destroyed when we return, so stop the preview.
         if (mCamera != null) {
-            System.out.println("YO!");
             mCamera.stopPreview();
         }
     }
@@ -107,8 +109,6 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback, Camera.Previe
             List<Camera.Size> sizes = parameters.getSupportedPreviewSizes();
             Camera.Size cs = sizes.get(0);
             parameters.setPreviewSize(cs.width, cs.height);
-            parameters.set("orientation", "landscape");
-            parameters.set("rotation", 90);
             requestLayout();
             mCamera.setParameters(parameters);
             mCamera.startPreview();
@@ -124,7 +124,6 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback, Camera.Previe
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-        System.out.println("ON PREVIEW FRAME");
         Camera.Parameters parameters = camera.getParameters();
         int width = parameters.getPreviewSize().width;
         int height = parameters.getPreviewSize().height;

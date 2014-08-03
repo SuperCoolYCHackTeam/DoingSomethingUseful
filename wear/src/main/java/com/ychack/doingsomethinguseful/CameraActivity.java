@@ -42,7 +42,6 @@ public class CameraActivity extends Activity {
             @Override
             public void run() {
                 if (mImageView != null) {
-                    System.out.println("Message received! "+data.length);
                     BitmapFactory.Options op = new BitmapFactory.Options();
                     op.inPreferredConfig = Bitmap.Config.ARGB_8888;
                     Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
