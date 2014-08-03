@@ -128,12 +128,18 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
         // Try to find an size match aspect ratio and size
         for (Size size : sizes) {
+            if (optimalSize == null) optimalSize = size;
+            if (optimalSize.width > size.width) {
+                optimalSize = size;
+            }
+            /*
             double ratio = (double) size.width / size.height;
             if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
             if (Math.abs(size.height - targetHeight) < minDiff) {
                 optimalSize = size;
                 minDiff = Math.abs(size.height - targetHeight);
             }
+            */
         }
 
         // Cannot find the one match the aspect ratio, ignore the requirement
