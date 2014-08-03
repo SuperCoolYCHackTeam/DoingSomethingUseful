@@ -20,15 +20,12 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
     SurfaceView mSurfaceView;
     SurfaceHolder mHolder;
-    Size mPreviewSize;
-    List<Size> mSupportedPreviewSizes;
     Camera mCamera;
 
     Preview(Context context, SurfaceView sv) {
         super(context);
 
         mSurfaceView = sv;
-//        addView(mSurfaceView);
 
         mHolder = mSurfaceView.getHolder();
         mHolder.addCallback(this);
@@ -38,7 +35,6 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
     public void setCamera(Camera camera) {
         mCamera = camera;
         if (mCamera != null) {
-            mSupportedPreviewSizes = mCamera.getParameters().getSupportedPreviewSizes();
             requestLayout();
 
             // get Camera parameters
@@ -54,19 +50,6 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
         }
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        // We purposely disregard child measurements because act as a
-        // wrapper to a SurfaceView that centers the camera preview instead
-        // of stretching it.
-        final int width = resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec);
-        final int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
-        setMeasuredDimension(width, height);
-
-        if (mSupportedPreviewSizes != null) {
-            mPreviewSize = getOptimalPreviewSize(mSupportedPreviewSizes, width, height);
-        }
-    }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
@@ -78,10 +61,6 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
             int previewWidth = width;
             int previewHeight = height;
-            if (mPreviewSize != null) {
-                previewWidth = mPreviewSize.width;
-                previewHeight = mPreviewSize.height;
-            }
 
             // Center the child SurfaceView within the parent.
             if (width * previewHeight > height * previewWidth) {
@@ -115,52 +94,13 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
         }
     }
 
-
-    private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
-        final double ASPECT_TOLERANCE = 0.1;
-        double targetRatio = (double) w / h;
-        if (sizes == null) return null;
-
-        Size optimalSize = null;
-        double minDiff = Double.MAX_VALUE;
-
-        int targetHeight = h;
-
-        // Try to find an size match aspect ratio and size
-        for (Size size : sizes) {
-            if (optimalSize == null) optimalSize = size;
-            if (optimalSize.width > size.width) {
-                optimalSize = size;
-            }
-            /*
-            double ratio = (double) size.width / size.height;
-            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
-            if (Math.abs(size.height - targetHeight) < minDiff) {
-                optimalSize = size;
-                minDiff = Math.abs(size.height - targetHeight);
-            }
-            */
-        }
-
-        // Cannot find the one match the aspect ratio, ignore the requirement
-        if (optimalSize == null) {
-            minDiff = Double.MAX_VALUE;
-            for (Size size : sizes) {
-                if (Math.abs(size.height - targetHeight) < minDiff) {
-                    optimalSize = size;
-                    minDiff = Math.abs(size.height - targetHeight);
-                }
-            }
-        }
-        return optimalSize;
-    }
-
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
         if(mCamera != null) {
             Camera.Parameters parameters = mCamera.getParameters();
-            parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
+            List<Camera.Size> sizes = parameters.getSupportedPreviewSizes();
+            Camera.Size cs = sizes.get(0);
+            parameters.setPreviewSize(cs.width, cs.height);
             requestLayout();
-
             mCamera.setParameters(parameters);
             mCamera.startPreview();
         }
