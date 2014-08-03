@@ -24,7 +24,6 @@ import java.util.List;
 import android.graphics.BitmapFactory;
 import android.content.Context;
 import android.hardware.Camera;
-import android.hardware.Camera.PictureCallback;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.SurfaceView;

@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.SurfaceView;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -34,6 +35,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -52,10 +54,12 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
 
     Activity act;
     Context ctx;
-    Bitmap mBitmap;
 
     private Handler handler = null;
-    private GoogleApiClient mGoogleApiClient;
+
+    ImageView mImageView;
+    Bitmap mBitmap;
+    GoogleApiClient mGoogleApiClient;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -82,7 +86,6 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
                 new SendImageTask().execute(resizeBitmap(mBitmap));
             }
         });
-
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
@@ -129,16 +132,6 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
     };
 
 
-    @Override
-    public void onDataChanged(DataEventBuffer dataEvents) {
-
-    }
-
-    @Override
-    public void onMessageReceived(MessageEvent messageEvent) {
-
-    }
-
     byte[] resizeImage(byte[] input) {
         Bitmap original = BitmapFactory.decodeByteArray(input , 0, input.length);
         Bitmap resized = Bitmap.createScaledBitmap(original, 50, 50, true);
@@ -182,60 +175,6 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
                 }
         );
     }
-
-    private class StartWearableActivityTask extends AsyncTask<Void, Void, Void> {
-
-        @Override
-        protected Void doInBackground(Void... args) {
-            Collection<String> nodes = getNodes();
-
-            for (String node : nodes) {
-                sendStartActivityMessage(node);
-            }
-            return null;
-        }
-    }
-
-    private void sendImage(String node, byte[] image) {
-        Wearable.MessageApi.sendMessage(
-                mGoogleApiClient, node, NEW_IMAGE, image).setResultCallback(
-                new ResultCallback<MessageApi.SendMessageResult>() {
-                    @Override
-                    public void onResult(MessageApi.SendMessageResult sendMessageResult) {
-                        if (!sendMessageResult.getStatus().isSuccess()) {
-                            Log.e(TAG, "Failed to send message with status code: "
-                                    + sendMessageResult.getStatus().getStatusCode());
-                        }
-                    }
-                }
-        );
-    }
-
-    private class SendImageTask extends AsyncTask<byte[], Void, Void> {
-
-        @Override
-        protected Void doInBackground(byte[]... args) {
-            Collection<String> nodes = getNodes();
-
-            for (String node : nodes) {
-                sendImage(node, args[0]);
-            }
-            return null;
-        }
-    }
-
-    private Collection<String> getNodes() {
-        HashSet<String> results = new HashSet<String>();
-        NodeApi.GetConnectedNodesResult nodes =
-                Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).await();
-
-        for (Node node : nodes.getNodes()) {
-            results.add(node.getId());
-        }
-
-        return results;
-    }
-
 
     @Override //ConnectionCallbacks
     public void onConnected(Bundle connectionHint) {
@@ -290,7 +229,7 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
                 connection.setDoInput(true);
                 connection.connect();
                 InputStream input = connection.getInputStream();
-                mBitmap = BitmapFactory.decodeStream(input);
+                    mBitmap = BitmapFactory.decodeStream(input);
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;
@@ -299,7 +238,84 @@ public class WebFeedActivity extends Activity implements  DataApi.DataListener,
             return null;
         }
 
-        protected void onPostExecute(Long result) {
+    }
+
+    private class SendImageTask extends AsyncTask<byte[], Void, Void> {
+
+        @Override
+        protected Void doInBackground(byte[]... args) {
+            Collection<String> nodes = getNodes();
+            System.out.println("Send Image");
+            for (String node : nodes) {
+                sendImage(node, args[0]);
+            }
+            return null;
         }
     }
+
+    private Collection<String> getNodes() {
+        HashSet<String> results = new HashSet<String>();
+        NodeApi.GetConnectedNodesResult nodes =
+                Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).await();
+
+        for (Node node : nodes.getNodes()) {
+            results.add(node.getId());
+        }
+
+        return results;
+    }
+
+    private byte[] toByteArray(Bitmap bm) {
+        if (bm == null) {
+            return new byte[0];
+        } else {
+            int bytes = bm.getByteCount();
+
+            ByteBuffer buffer = ByteBuffer.allocate(bytes); //Create a new buffer
+            bm.copyPixelsToBuffer(buffer); //Move the byte data to the buffer
+
+            return buffer.array(); //Get the underlying array containing the data.
+        }
+
+    }
+
+    @Override
+    public void onDataChanged(DataEventBuffer dataEvents) {
+
+    }
+
+    @Override
+    public void onMessageReceived(MessageEvent messageEvent) {
+
+    }
+
+
+    private class StartWearableActivityTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... args) {
+            Collection<String> nodes = getNodes();
+
+            for (String node : nodes) {
+                sendStartActivityMessage(node);
+            }
+            return null;
+        }
+    }
+
+    private void sendImage(String node, byte[] image) {
+        Wearable.MessageApi.sendMessage(
+                mGoogleApiClient, node, NEW_IMAGE, image).setResultCallback(
+                new ResultCallback<MessageApi.SendMessageResult>() {
+                    @Override
+                    public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                        if (!sendMessageResult.getStatus().isSuccess()) {
+                            Log.e(TAG, "Failed to send message with status code: "
+                                    + sendMessageResult.getStatus().getStatusCode());
+                        }
+                    }
+                }
+        );
+    }
+
 }
